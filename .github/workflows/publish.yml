@@ -1,0 +1,31 @@
+name: Publish jizhang
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Copy app from jizhang
+        run: |
+          git clone --depth 1 https://github.com/yy262579-hash/jizhang.git src
+          cp src/index.html src/styles.css src/app-a.js src/app-b.js src/sw.js src/manifest.webmanifest .
+          mkdir -p icons
+          cp src/icons/make_ci_icons.py src/icons/icon.svg icons/
+          python icons/make_ci_icons.py
+          touch .nojekyll
+          rm -rf src
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Publish jizhang HTTPS site
