@@ -564,6 +564,13 @@ h1 {
   background: rgba(255, 255, 255, 0.16);
 }
 
+#tab-add {
+  font-size: 12px;
+  padding-left: 2px;
+  padding-right: 2px;
+  white-space: nowrap;
+}
+
 @media (max-width: 420px) {
   body {
     padding: 0;

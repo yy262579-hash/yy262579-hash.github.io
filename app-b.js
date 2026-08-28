@@ -103,7 +103,7 @@ function renderBillList() {
 }
 
 function setView(view) {
-  const titles = { add: "记一笔", list: "账单", summary: "汇总" };
+  const titles = { add: "吴彦祖专属记账", list: "账单", summary: "汇总" };
   const shell = document.getElementById("app-shell");
   const form = document.getElementById("record-form");
   const panel = document.getElementById("bill-panel");
