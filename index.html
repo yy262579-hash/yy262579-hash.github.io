@@ -2,10 +2,107 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>记账</title>
+  <meta name="description" content="无需服务器的个人记账，数据保存在本机" />
+  <meta name="theme-color" content="#5b2d8e" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="记账" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <p>正在发布记账应用…</p>
+  <div class="phone" id="app-shell" data-view="add">
+    <div class="phone-body">
+    <header class="topbar">
+      <p class="eyebrow">本机记账</p>
+      <h1 id="page-title">记一笔</h1>
+    </header>
+    <section id="month-summary" class="month-summary" aria-label="本月概况">
+      <p class="month-label" id="month-label">本月</p>
+      <div class="month-grid">
+        <div><span>收入</span><strong id="month-income">¥0.00</strong></div>
+        <div><span>支出</span><strong id="month-expense">¥0.00</strong></div>
+        <div><span>余额</span><strong id="month-balance">¥0.00</strong></div>
+      </div>
+      <p id="month-warn" class="month-warn" hidden></p>
+    </section>
+    <form id="record-form" class="sheet" novalidate>
+      <div class="type-switch" role="radiogroup" aria-label="类型">
+        <label class="type-option"><input type="radio" name="type" value="expense" checked /><span>支出</span></label>
+        <label class="type-option"><input type="radio" name="type" value="income" /><span>收入</span></label>
+      </div>
+      <label class="amount-block">
+        <span class="amount-label">金额（元）</span>
+        <span class="amount-row">
+          <span class="yen" aria-hidden="true">¥</span>
+          <input id="amount" name="amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-describedby="form-error" />
+        </span>
+      </label>
+      <label class="field"><span>分类</span><select id="category" name="category" required></select></label>
+      <label class="field"><span>日期</span><input id="date" name="date" type="date" required /></label>
+      <label class="field">
+        <span id="note-label">备注（可选）</span>
+        <input id="note" name="note" type="text" maxlength="80" placeholder="例如：午饭、工资" />
+        <p id="note-hint" class="note-hint" hidden>写下这笔自定义分类的说明，例如：兴趣班、压岁钱</p>
+      </label>
+      <p id="form-error" class="error" role="alert" hidden></p>
+      <p id="form-ok" class="ok" role="status" hidden></p>
+      <button type="submit" id="save-btn">记下</button>
+    </form>
+    <section id="bill-panel" class="bill-panel" hidden>
+      <p id="bill-error" class="error" hidden></p>
+      <p id="bill-empty" class="bill-empty">还没有账单</p>
+      <ul id="bill-list" class="bill-list"></ul>
+    </section>
+    <section id="summary-panel" class="summary-panel" hidden>
+      <p id="summary-error" class="error" hidden></p>
+      <div class="mode-switch" role="tablist" aria-label="汇总类型">
+        <button type="button" id="mode-year" class="is-on">年汇总</button>
+        <button type="button" id="mode-month">月汇总</button>
+      </div>
+      <label class="field"><span id="period-field-label">年份</span><select id="period-select"></select></label>
+      <section class="month-summary" aria-label="账单汇总">
+        <p class="month-label" id="period-label">年账单</p>
+        <div class="month-grid">
+          <div><span>收入</span><strong id="year-income">¥0.00</strong></div>
+          <div><span>支出</span><strong id="year-expense">¥0.00</strong></div>
+          <div><span>余额</span><strong id="year-balance">¥0.00</strong></div>
+        </div>
+        <p id="year-warn" class="month-warn" hidden></p>
+      </section>
+      <section class="chart-block">
+        <h2>支出分类</h2>
+        <div class="chart-row">
+          <div id="expense-pie" class="pie is-empty" aria-hidden="true"><div class="pie-hole"><strong><b id="expense-pie-total">¥0.00</b><span>支出</span></strong></div></div>
+          <ul id="expense-legend" class="legend"></ul>
+        </div>
+      </section>
+      <section class="chart-block">
+        <h2>收入分类</h2>
+        <div class="chart-row">
+          <div id="income-pie" class="pie is-empty" aria-hidden="true"><div class="pie-hole"><strong><b id="income-pie-total">¥0.00</b><span>收入</span></strong></div></div>
+          <ul id="income-legend" class="legend"></ul>
+        </div>
+      </section>
+    </section>
+    </div>
+    <nav class="tabbar" aria-label="页面">
+      <button type="button" id="tab-add" class="is-on" aria-current="page">记一笔</button>
+      <button type="button" id="tab-list">账单</button>
+      <button type="button" id="tab-summary">汇总</button>
+    </nav>
+  </div>
+  <script src="app-a.js"></script>
+  <script src="app-b.js"></script>
+  <script>
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      navigator.serviceWorker.register("./sw.js").catch(function () {});
+    }
+  </script>
 </body>
 </html>
