@@ -76,6 +76,19 @@
         <select id="category" name="category" required></select>
       </label>
 
+      <label class="field" id="custom-category-wrap" hidden>
+        <span>分类名称</span>
+        <input
+          id="custom-category"
+          name="customCategory"
+          type="text"
+          maxlength="20"
+          autocomplete="off"
+          placeholder="改成你想记的名字，例如：午饭"
+        />
+        <p class="note-hint">不想用餐饮、交通这些固定名时，在这里改成自己的分类名</p>
+      </label>
+
       <label class="field">
         <span>日期</span>
         <input id="date" name="date" type="date" required />
@@ -84,7 +97,6 @@
       <label class="field">
         <span id="note-label">备注（可选）</span>
         <input id="note" name="note" type="text" maxlength="80" placeholder="例如：午饭、工资" />
-        <p id="note-hint" class="note-hint" hidden>写下这笔自定义分类的说明，例如：兴趣班、压岁钱</p>
       </label>
 
       <p id="form-error" class="error" role="alert" hidden></p>

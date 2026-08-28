@@ -7,24 +7,24 @@ const CATEGORIES = {
 };
 const CATEGORY_COLORS = {
   expense: {
-    "餐饮": "#c2473a",
-    "交通": "#2f6fed",
-    "购物": "#e39b1a",
-    "居住": "#6b4f3a",
-    "娱乐": "#7b4b9a",
-    "医疗": "#1a9b8a",
-    "孩子": "#d45d8a",
-    "其他": "#8a8175",
-    "自定义": "#b85c38",
+    餐饮: "#c2473a",
+    交通: "#2f6fed",
+    购物: "#e39b1a",
+    居住: "#6b4f3a",
+    娱乐: "#7b4b9a",
+    医疗: "#1a9b8a",
+    孩子: "#d45d8a",
+    其他: "#8a8175",
+    自定义: "#b85c38",
   },
   income: {
-    "工资": "#1f6f4a",
-    "奖金": "#3d9b6a",
-    "理财": "#2a7f9e",
-    "报销": "#c46b1f",
-    "孩子": "#d45d8a",
-    "其他": "#8a8175",
-    "自定义": "#b85c38",
+    工资: "#1f6f4a",
+    奖金: "#3d9b6a",
+    理财: "#2a7f9e",
+    报销: "#c46b1f",
+    孩子: "#d45d8a",
+    其他: "#8a8175",
+    自定义: "#b85c38",
   },
 };
 const UNKNOWN_CATEGORY_COLOR = "#5c6670";
@@ -45,23 +45,26 @@ function parseAmountToCents(raw) {
   return { ok: true, cents: Math.round(yuan * 100) };
 }
 
-function createRecord({ type, amountRaw, category, date, note }) {
+function createRecord({ type, amountRaw, category, customCategory, date, note }) {
   if (type !== "income" && type !== "expense") {
     return { ok: false, error: "请选择收入或支出" };
   }
   const amount = parseAmountToCents(amountRaw);
   if (!amount.ok) return amount;
-  const cat = String(category ?? "").trim();
+  let cat = String(category ?? "").trim();
   const allowed = CATEGORIES[type] || [];
   if (!cat) return { ok: false, error: "请选择分类" };
-  if (!allowed.includes(cat)) return { ok: false, error: "分类与收支类型不匹配" };
+  if (cat === CUSTOM_CATEGORY) {
+    cat = String(customCategory ?? "").trim();
+    if (!cat) return { ok: false, error: "请填写你想记录的分类名" };
+    if (cat.length > 20) return { ok: false, error: "分类名最多 20 个字" };
+  } else if (!allowed.includes(cat)) {
+    return { ok: false, error: "分类与收支类型不匹配" };
+  }
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return { ok: false, error: "请选择有效日期" };
   }
   const trimmedNote = String(note ?? "").trim();
-  if (cat === CUSTOM_CATEGORY && !trimmedNote) {
-    return { ok: false, error: "选自定义时请填写备注" };
-  }
   if (trimmedNote.length > 80) {
     return { ok: false, error: "备注最多 80 个字" };
   }
@@ -79,14 +82,10 @@ function createRecord({ type, amountRaw, category, date, note }) {
   };
 }
 
-function syncCustomNoteField(categorySelect, noteInput, noteLabel, noteHint) {
+function syncCustomCategoryField(categorySelect, wrap, input) {
   const custom = categorySelect?.value === CUSTOM_CATEGORY;
-  if (noteLabel) noteLabel.textContent = custom ? "备注（选自定义时必填）" : "备注（可选）";
-  if (noteInput) {
-    noteInput.placeholder = custom ? "例如：兴趣班、压岁钱" : "例如：午饭、工资";
-    noteInput.classList.toggle("note-hit", custom);
-  }
-  if (noteHint) noteHint.hidden = !custom;
+  if (wrap) wrap.hidden = !custom;
+  if (input) input.classList.toggle("note-hit", custom);
 }
 
 function fillCategorySelect(select, type, selected) {
@@ -217,14 +216,15 @@ function collectMonths(records, now = new Date()) {
 }
 
 function categoryColor(type, category) {
-  return (CATEGORY_COLORS[type] && CATEGORY_COLORS[type][category]) || UNKNOWN_CATEGORY_COLOR;
+  const map = CATEGORY_COLORS[type] || {};
+  if (map[category]) return map[category];
+  if (!category || category === "未分类") return UNKNOWN_CATEGORY_COLOR;
+  return map[CUSTOM_CATEGORY] || UNKNOWN_CATEGORY_COLOR;
 }
 
 function summarizeByCategory(records, prefix, type) {
-  const allowed = CATEGORIES[type] || [];
-  const totals = new Map(allowed.map((name) => [name, 0]));
+  const totals = new Map();
   let skipped = 0;
-  let unknownCents = 0;
   for (const rec of records) {
     if (!rec || rec.type !== type || typeof rec.date !== "string" || !rec.date.startsWith(prefix)) {
       continue;
@@ -234,14 +234,12 @@ function summarizeByCategory(records, prefix, type) {
       skipped += 1;
       continue;
     }
-    const cat = String(rec.category || "").trim();
-    if (totals.has(cat)) totals.set(cat, totals.get(cat) + cents);
-    else unknownCents += cents;
+    const cat = String(rec.category || "").trim() || "未分类";
+    totals.set(cat, (totals.get(cat) || 0) + cents);
   }
-  const rows = allowed
-    .map((category) => ({ category, cents: totals.get(category) }))
+  const rows = [...totals.entries()]
+    .map(([category, cents]) => ({ category, cents }))
     .filter((row) => row.cents > 0);
-  if (unknownCents > 0) rows.push({ category: "未分类", cents: unknownCents });
   return { rows, skipped };
 }
 

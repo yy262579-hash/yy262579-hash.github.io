@@ -379,25 +379,25 @@ function initForm() {
 
   const amountInput = document.getElementById("amount");
   const categorySelect = document.getElementById("category");
+  const customWrap = document.getElementById("custom-category-wrap");
+  const customInput = document.getElementById("custom-category");
   const dateInput = document.getElementById("date");
   const noteInput = document.getElementById("note");
-  const noteLabel = document.getElementById("note-label");
-  const noteHint = document.getElementById("note-hint");
   const errorEl = document.getElementById("form-error");
   const okEl = document.getElementById("form-ok");
 
   dateInput.value = todayISO();
   fillCategorySelect(categorySelect, "expense");
-  syncCustomNoteField(categorySelect, noteInput, noteLabel, noteHint);
+  syncCustomCategoryField(categorySelect, customWrap, customInput);
 
   form.querySelectorAll('input[name="type"]').forEach((radio) => {
     radio.addEventListener("change", () => {
       fillCategorySelect(categorySelect, radio.value, categorySelect.value);
-      syncCustomNoteField(categorySelect, noteInput, noteLabel, noteHint);
+      syncCustomCategoryField(categorySelect, customWrap, customInput);
     });
   });
   categorySelect.addEventListener("change", () => {
-    syncCustomNoteField(categorySelect, noteInput, noteLabel, noteHint);
+    syncCustomCategoryField(categorySelect, customWrap, customInput);
   });
 
   function showError(message) {
@@ -421,6 +421,7 @@ function initForm() {
       type,
       amountRaw: amountInput.value,
       category: categorySelect.value,
+      customCategory: customInput ? customInput.value : "",
       date: dateInput.value,
       note: noteInput.value,
     });
@@ -435,16 +436,11 @@ function initForm() {
       return;
     }
     const label = result.record.type === "income" ? "收入" : "支出";
-    const extra =
-      result.record.category === CUSTOM_CATEGORY && result.record.note
-        ? `（${result.record.note}）`
-        : "";
-    showOk(
-      `已记下${label} · ${result.record.category}${extra} ¥${formatYuan(result.record.amountCents)}`
-    );
+    showOk(`已记下${label} · ${result.record.category} ¥${formatYuan(result.record.amountCents)}`);
     amountInput.value = "";
     noteInput.value = "";
-    syncCustomNoteField(categorySelect, noteInput, noteLabel, noteHint);
+    if (customInput) customInput.value = "";
+    syncCustomCategoryField(categorySelect, customWrap, customInput);
     renderMonthSummary();
     renderBillList();
     renderPeriodSummary();
