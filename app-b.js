@@ -37,68 +37,97 @@ function renderBillList() {
     errorEl.textContent = `有 ${skipped} 条记录无法显示`;
   }
 
-  for (const item of items) {
-    const li = document.createElement("li");
-    li.className = "bill-item";
-    if (item.id) li.dataset.id = item.id;
+  for (const group of groupBillsByDate(items)) {
+    const day = document.createElement("li");
+    day.className = "bill-day";
 
-    const front = document.createElement("div");
-    front.className = "bill-front";
+    const head = document.createElement("div");
+    head.className = "bill-day-head";
 
-    const main = document.createElement("div");
-    main.className = "bill-main";
+    const dateEl = document.createElement("span");
+    dateEl.className = "bill-day-date";
+    dateEl.textContent = group.label;
 
-    const cat = document.createElement("p");
-    cat.className = "bill-cat";
-    cat.textContent = item.category;
+    const sums = document.createElement("div");
+    sums.className = "bill-day-sums";
+    const expenseEl = document.createElement("span");
+    expenseEl.className = "is-expense";
+    expenseEl.textContent = `支出 ${formatMoney(group.expenseCents)}`;
+    const incomeEl = document.createElement("span");
+    incomeEl.className = "is-income";
+    incomeEl.textContent = `收入 ${formatMoney(group.incomeCents)}`;
+    sums.append(expenseEl, incomeEl);
+    head.append(dateEl, sums);
 
-    const meta = document.createElement("p");
-    meta.className = "bill-meta";
-    meta.textContent = item.note
-      ? `${formatDateLabel(item.date)} · ${item.note}`
-      : formatDateLabel(item.date);
+    const dayList = document.createElement("ul");
+    dayList.className = "bill-day-items";
 
-    main.append(cat, meta);
+    for (const item of group.items) {
+      const li = document.createElement("li");
+      li.className = "bill-item";
+      if (item.id) li.dataset.id = item.id;
 
-    const amount = document.createElement("span");
-    amount.className = `bill-amount ${item.type === "income" ? "is-income" : "is-expense"}`;
-    amount.textContent =
-      (item.type === "income" ? "+" : "-") + formatMoney(item.amountCents).replace("-", "");
+      const front = document.createElement("div");
+      front.className = "bill-front";
 
-    front.append(main, amount);
+      const main = document.createElement("div");
+      main.className = "bill-main";
 
-    const del = document.createElement("button");
-    del.type = "button";
-    del.className = "bill-delete";
-    del.textContent = "删除";
-    del.tabIndex = -1;
-    del.addEventListener("click", () => {
-      const label = `${item.category} ${amount.textContent}`;
-      if (!window.confirm(`确定删除「${label}」？删除后无法恢复。`)) return;
-      try {
-        const result = deleteRecord(item.id);
-        if (!result.ok) {
+      const cat = document.createElement("p");
+      cat.className = "bill-cat";
+      cat.textContent = item.category;
+
+      main.append(cat);
+      if (item.note) {
+        const meta = document.createElement("p");
+        meta.className = "bill-meta";
+        meta.textContent = item.note;
+        main.append(meta);
+      }
+
+      const amount = document.createElement("span");
+      amount.className = `bill-amount ${item.type === "income" ? "is-income" : "is-expense"}`;
+      amount.textContent =
+        (item.type === "income" ? "+" : "-") + formatMoney(item.amountCents).replace("-", "");
+
+      front.append(main, amount);
+
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "bill-delete";
+      del.textContent = "删除";
+      del.tabIndex = -1;
+      del.addEventListener("click", () => {
+        const label = `${item.category} ${amount.textContent}`;
+        if (!window.confirm(`确定删除「${label}」？删除后无法恢复。`)) return;
+        try {
+          const result = deleteRecord(item.id);
+          if (!result.ok) {
+            if (errorEl) {
+              errorEl.hidden = false;
+              errorEl.textContent = result.error;
+            }
+            return;
+          }
+        } catch (err) {
           if (errorEl) {
             errorEl.hidden = false;
-            errorEl.textContent = result.error;
+            errorEl.textContent = err.message || "删除失败";
           }
           return;
         }
-      } catch (err) {
-        if (errorEl) {
-          errorEl.hidden = false;
-          errorEl.textContent = err.message || "删除失败";
-        }
-        return;
-      }
-      renderMonthSummary();
-      renderBillList();
-      renderPeriodSummary();
-    });
+        renderMonthSummary();
+        renderBillList();
+        renderPeriodSummary();
+      });
 
-    li.append(del, front);
-    attachSwipeToDelete(li, front);
-    listEl.append(li);
+      li.append(del, front);
+      attachSwipeToDelete(li, front);
+      dayList.append(li);
+    }
+
+    day.append(head, dayList);
+    listEl.append(day);
   }
 }
 
@@ -369,6 +398,7 @@ window.Jizhang = {
   formatDateLabel,
   sortRecords,
   toBillItem,
+  groupBillsByDate,
   renderBillList,
   setView,
 };
@@ -390,14 +420,31 @@ function initForm() {
   fillCategorySelect(categorySelect, "expense");
   syncCustomCategoryField(categorySelect, customWrap, customInput);
 
+  const categoryBtn = document.getElementById("category-btn");
+  const categoryMenu = document.getElementById("category-menu");
+  if (categoryBtn && categoryMenu) {
+    categoryBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const open = categoryMenu.hidden;
+      categoryMenu.hidden = !open;
+      categoryBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest(".cat-picker")) closeCategoryMenu();
+    });
+  }
+
   form.querySelectorAll('input[name="type"]').forEach((radio) => {
     radio.addEventListener("change", () => {
       fillCategorySelect(categorySelect, radio.value, categorySelect.value);
       syncCustomCategoryField(categorySelect, customWrap, customInput);
+      closeCategoryMenu();
     });
   });
   categorySelect.addEventListener("change", () => {
     syncCustomCategoryField(categorySelect, customWrap, customInput);
+    renderCategoryPicker(categorySelect);
   });
 
   function showError(message) {

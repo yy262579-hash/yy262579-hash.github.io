@@ -73,7 +73,11 @@
 
       <label class="field">
         <span>分类</span>
-        <select id="category" name="category" required></select>
+        <div class="cat-picker">
+          <select id="category" name="category" required hidden></select>
+          <button type="button" id="category-btn" class="cat-trigger" aria-haspopup="listbox" aria-expanded="false">餐饮</button>
+          <ul id="category-menu" class="cat-menu" hidden role="listbox"></ul>
+        </div>
       </label>
 
       <label class="field" id="custom-category-wrap" hidden>

@@ -99,6 +99,36 @@ function fillCategorySelect(select, type, selected) {
     if (name === keep) opt.selected = true;
     select.appendChild(opt);
   }
+  renderCategoryPicker(select);
+}
+
+function closeCategoryMenu() {
+  const menu = document.getElementById("category-menu");
+  const btn = document.getElementById("category-btn");
+  if (menu) menu.hidden = true;
+  if (btn) btn.setAttribute("aria-expanded", "false");
+}
+
+function renderCategoryPicker(select) {
+  const btn = document.getElementById("category-btn");
+  const menu = document.getElementById("category-menu");
+  if (btn) btn.textContent = select.value || "请选择分类";
+  if (!menu) return;
+  menu.replaceChildren();
+  for (const opt of [...select.options]) {
+    const li = document.createElement("li");
+    li.setAttribute("role", "option");
+    li.textContent = opt.value;
+    li.dataset.value = opt.value;
+    if (opt.selected) li.classList.add("is-on");
+    li.addEventListener("click", () => {
+      select.value = opt.value;
+      select.dispatchEvent(new Event("change"));
+      renderCategoryPicker(select);
+      closeCategoryMenu();
+    });
+    menu.append(li);
+  }
 }
 
 function loadRecords() {
@@ -300,6 +330,8 @@ let selectedYearKey = "";
 let selectedMonthKey = "";
 let selectedSummaryMode = "year";
 
+const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+
 function formatDateLabel(date, now = new Date()) {
   if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return "日期未知";
@@ -307,6 +339,20 @@ function formatDateLabel(date, now = new Date()) {
   const [year, month, day] = date.split("-");
   const md = `${Number(month)}月${Number(day)}日`;
   return Number(year) === now.getFullYear() ? md : `${year}年${md}`;
+}
+
+function weekdayLabel(date) {
+  if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return "";
+  const [year, month, day] = date.split("-").map(Number);
+  const dt = new Date(year, month - 1, day);
+  if (dt.getFullYear() !== year || dt.getMonth() !== month - 1 || dt.getDate() !== day) return "";
+  return WEEKDAYS[dt.getDay()];
+}
+
+function formatBillDayLabel(date, now = new Date()) {
+  const day = formatDateLabel(date, now);
+  const week = weekdayLabel(date);
+  return week ? `${day} ${week}` : day;
 }
 
 function sortRecords(records) {
@@ -336,6 +382,30 @@ function toBillItem(rec) {
     amountCents: cents,
     createdAt: Number(rec.createdAt) || 0,
   };
+}
+
+function groupBillsByDate(items) {
+  const groups = [];
+  const map = new Map();
+  for (const item of items) {
+    const key = item.date;
+    let group = map.get(key);
+    if (!group) {
+      group = {
+        date: key,
+        label: formatBillDayLabel(key),
+        incomeCents: 0,
+        expenseCents: 0,
+        items: [],
+      };
+      map.set(key, group);
+      groups.push(group);
+    }
+    group.items.push(item);
+    if (item.type === "income") group.incomeCents += item.amountCents;
+    else group.expenseCents += item.amountCents;
+  }
+  return groups;
 }
 
 const SWIPE_DELETE_WIDTH = 72;

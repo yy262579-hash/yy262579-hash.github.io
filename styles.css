@@ -265,6 +265,64 @@ h1 {
   color: inherit;
 }
 
+.cat-picker {
+  position: relative;
+}
+
+.cat-trigger {
+  position: relative;
+  width: 100%;
+  display: block;
+  text-align: left;
+  border: 1px solid var(--rule);
+  background: var(--field);
+  border-radius: 16px;
+  padding: 12px 36px 12px 12px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cat-trigger::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  margin-top: -3px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid rgba(244, 247, 255, 0.8);
+}
+
+.cat-menu {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  background: #f4f7ff;
+  border: 1px solid rgba(91, 45, 142, 0.22);
+  border-radius: 16px;
+  max-height: 240px;
+  overflow-y: auto;
+  box-shadow: 0 16px 40px rgba(12, 10, 40, 0.35);
+}
+
+.cat-menu li {
+  padding: 10px 12px;
+  color: #1b2a6b;
+  cursor: pointer;
+}
+
+.cat-menu li.is-on,
+.cat-menu li:hover {
+  background: #5b2d8e;
+  color: #f4f7ff;
+}
+
 .field input:focus,
 .field select:focus,
 #amount:focus {
@@ -272,7 +330,8 @@ h1 {
   outline-offset: 2px;
 }
 
-#note.note-hit {
+#note.note-hit,
+#custom-category.note-hit {
   border-color: #d45d8a;
   box-shadow: 0 0 0 3px rgba(212, 93, 138, 0.12);
 }
@@ -327,6 +386,53 @@ h1 {
 }
 
 .bill-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bill-day {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+}
+
+.bill-day:last-child {
+  margin-bottom: 0;
+}
+
+.bill-day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 4px 0 8px;
+}
+
+.bill-day-date {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.bill-day-sums {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bill-day-sums .is-expense {
+  color: var(--expense);
+}
+
+.bill-day-sums .is-income {
+  color: var(--income);
+}
+
+.bill-day-items {
   list-style: none;
   margin: 0;
   padding: 0;
